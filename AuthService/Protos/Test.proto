@@ -1,0 +1,23 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "AuthService";
+
+package test;
+
+// The greeting service definition.
+service Tester {
+  // Sends a greeting
+  rpc SayTest (TestRequest) returns (TestReply);
+}
+
+// The request message containing the user's name.
+message TestRequest {
+  string name = 1;
+  int32 age = 2;
+}
+
+// The response message containing the greetings.
+message TestReply {
+  string message = 1;
+  bool confirmation = 2;
+}

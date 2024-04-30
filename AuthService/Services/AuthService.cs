@@ -1,0 +1,43 @@
+﻿using AuthService;
+using AuthService.Application;
+using AuthService.Application.ValueObjects;
+using Grpc.Core;
+
+namespace AuthService.Services;
+
+public class AuthenticationService : Auth.AuthBase
+{
+    private readonly ILogger<AuthenticationService> _logger;
+    private readonly UserService _userService;
+
+    public AuthenticationService(ILogger<AuthenticationService> logger, UserService userService) 
+    {
+        _logger = logger;
+        _userService = userService;
+    }
+
+    public override Task<SignInReply> SignIn(
+        SignInRequest request, ServerCallContext context)
+    {
+        _logger.LogInformation($"Received AuthMessage: {request}");
+        return Task.FromResult(
+            new SignInReply { AccessToken = "Token", RefreshToken = "RefreshToken", UserId = "Id" });
+    }
+
+    public async override Task<SignUpReply> SignUp(
+        SignUpRequest request, ServerCallContext context)
+    {
+        _logger.LogInformation($"Received SignUp Message: {request}");
+        var result = await _userService.RegisterUserAsync(
+            new User(request.FirstName, request.LastName, request.Password, request.Email));
+        return new SignUpReply { Success = result.Success };
+    }
+
+    public async override Task<VerifyReply> Verify(
+        VerifyRequest request, ServerCallContext context)
+    {
+        _logger.LogInformation($"Received Verify MessageL {request}");
+        var verificationResult = await _userService.VerifyUserAsync(request.Token);
+        return new VerifyReply { Success = verificationResult.Success };
+    }
+}

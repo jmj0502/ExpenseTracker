@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+option csharp_namespace = "AuthService";
+
+package auth;
+
+// AuthService definition
+service Auth {
+  // Sign up Request
+  rpc SignUp (SignUpRequest) returns (SignUpReply);
+
+  // Sign In Request
+  rpc SignIn (SignInRequest) returns (SignInReply);
+
+  // Verify
+  rpc Verify (VerifyRequest) returns (VerifyReply);
+}
+
+// SignUpRequest message
+message SignUpRequest {
+	string email = 1;
+	string password = 2;
+	string firstName = 3;
+	string lastName = 4;
+}
+
+//:access internal
+message SignUpReply {
+	bool success = 1;
+}
+
+message SignInRequest {
+	string email = 1;
+	string password = 2;
+}
+
+message SignInReply {
+	string userId = 1;
+	string accessToken = 2;
+	string refreshToken = 3;
+}
+
+message VerifyRequest {
+	string token = 1;
+}
+
+message VerifyReply {
+	bool success = 1;
+}
+
