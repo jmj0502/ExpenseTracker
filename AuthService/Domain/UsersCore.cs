@@ -26,7 +26,7 @@ public class UsersCore
     public bool VerifyPassword(
         string plainPassword, string hashedPassword)
     {
-        return BCrypt.Net.BCrypt.EnhancedVerify(
+        return BCrypt.Net.BCrypt.Verify(
             plainPassword, hashedPassword);
     }
 

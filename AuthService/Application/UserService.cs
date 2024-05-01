@@ -49,7 +49,7 @@ public class UserService
             await _usersCollection.FindAsync(Builders<Users>.Filter.Empty)).ToListAsync();
     }
 
-    public async Task<SuccessResult> RegisterUserAsync(User newUser)
+    public async Task<SuccessResult> RegisterAsync(NewUser newUser)
     {
         // using var session = await _client.StartSessionAsync();
         // session.StartTransaction();
@@ -95,7 +95,7 @@ public class UserService
         }
     }
 
-    public async Task<SuccessResult> VerifyUserAsync(string verificationJWT)
+    public async Task<SuccessResult> VerifyAsync(string verificationJWT)
     {
         try
         {
@@ -130,5 +130,33 @@ public class UserService
             _logger.LogError($"[UserService-VerifyTokenAsync/Error]:{e.Message}");
             return new SuccessResult(false);
         }
+    }
+
+    public async Task<SignedUser> SignInAsync(User user)
+    {
+        var filterBuilder = Builders<Users>.Filter;
+        var emailFilter = filterBuilder.Eq(u => u.Email, user.Email);
+        var enabledFilter = filterBuilder.Eq(u => u.IsActive, true);
+        var userFilter = filterBuilder.And(emailFilter, enabledFilter);
+        var existingUser = await (
+            await _usersCollection.FindAsync(userFilter)).FirstOrDefaultAsync();
+        if (existingUser is null)
+            return new SignedUser("", "", "", "");
+        var hasValidPassword = _usersCore.VerifyPassword(
+            user.Password, existingUser.Password);
+        if (!hasValidPassword)
+            return new SignedUser("", "", "", "");
+        const int ACCESS_TOKEN_EXPIRATION_TIME_IN_MINS = 15;
+        var accessToken = _usersCore.GenerateJWT(new JWTPayload(
+            _jwtSettings.SecretKey,
+            _jwtSettings.Issuer,
+            _jwtSettings.Audience,
+            ACCESS_TOKEN_EXPIRATION_TIME_IN_MINS,
+            existingUser.Id,
+            existingUser.Email
+        ));
+        var refreshToken = _usersCore.GenerateRefreshToken();
+        return new SignedUser(
+            existingUser.Id, existingUser.Email, accessToken, refreshToken);
     }
 }

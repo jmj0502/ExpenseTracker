@@ -36,8 +36,9 @@ message SignInRequest {
 
 message SignInReply {
 	string userId = 1;
-	string accessToken = 2;
-	string refreshToken = 3;
+	string email = 2;
+	string accessToken = 3;
+	string refreshToken = 4;
 }
 
 message VerifyRequest {

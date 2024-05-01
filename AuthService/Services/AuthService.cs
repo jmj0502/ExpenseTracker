@@ -2,6 +2,7 @@
 using AuthService.Application;
 using AuthService.Application.ValueObjects;
 using Grpc.Core;
+using Microsoft.IdentityModel.Tokens;
 
 namespace AuthService.Services;
 
@@ -16,20 +17,31 @@ public class AuthenticationService : Auth.AuthBase
         _userService = userService;
     }
 
-    public override Task<SignInReply> SignIn(
+    public override async Task<SignInReply> SignIn(
         SignInRequest request, ServerCallContext context)
     {
         _logger.LogInformation($"Received AuthMessage: {request}");
-        return Task.FromResult(
-            new SignInReply { AccessToken = "Token", RefreshToken = "RefreshToken", UserId = "Id" });
+        var signedUser = await _userService.SignInAsync(
+            new User(request.Email, request.Password));
+        if (signedUser.Email.IsNullOrEmpty())
+        {
+            throw new RpcException(
+                new Status(StatusCode.InvalidArgument, "Invalid credentials"));
+        }
+        return new SignInReply { 
+            UserId = signedUser.UserId,
+            Email = signedUser.Email,
+            AccessToken = signedUser.AccessToken, 
+            RefreshToken = signedUser.RefreshToken, 
+        };
     }
 
     public async override Task<SignUpReply> SignUp(
         SignUpRequest request, ServerCallContext context)
     {
         _logger.LogInformation($"Received SignUp Message: {request}");
-        var result = await _userService.RegisterUserAsync(
-            new User(request.FirstName, request.LastName, request.Password, request.Email));
+        var result = await _userService.RegisterAsync(
+            new NewUser(request.FirstName, request.LastName, request.Password, request.Email));
         return new SignUpReply { Success = result.Success };
     }
 
@@ -37,7 +49,7 @@ public class AuthenticationService : Auth.AuthBase
         VerifyRequest request, ServerCallContext context)
     {
         _logger.LogInformation($"Received Verify MessageL {request}");
-        var verificationResult = await _userService.VerifyUserAsync(request.Token);
+        var verificationResult = await _userService.VerifyAsync(request.Token);
         return new VerifyReply { Success = verificationResult.Success };
     }
 }
